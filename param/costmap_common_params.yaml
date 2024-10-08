@@ -1,0 +1,20 @@
+# 장애물과 로봇 사이의 거리 (미터 단위)
+obstacle_range: 2.0
+# 레이 트레이싱을 위한 최대 거리 (미터 단위)
+raytrace_range: 2.5
+
+# 로봇의 발자국 형태를 정의 (x, y 좌표로 구성된 다각형)
+footprint: [[-0.15, -0.1], [-0.15, 0.1], [0.15, 0.1], [0.15, -0.1]]
+# robot_radius: 0.17  # (주석 처리됨) 로봇의 반지름, 대체로 footprint 대신 사용할 수 있음
+
+# 비용 맵에서 장애물 반경 (미터 단위)
+inflation_radius: 0.5
+# 비용 스케일링 인자, 장애물 주변의 비용 증가율을 조정
+cost_scaling_factor: 10.0
+
+# 맵의 유형을 정의 (비용 맵)
+map_type: costmap
+# 관찰 소스를 정의, 로봇이 감지하는 데이터를 설정
+observation_sources: scan
+# 레이저 스캔 센서에 대한 설정
+scan: {sensor_frame: base_scan, data_type: LaserScan, topic: scan, marking: true, clearing: true}

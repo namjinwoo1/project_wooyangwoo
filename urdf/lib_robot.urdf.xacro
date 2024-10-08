@@ -1,0 +1,214 @@
+<?xml version="1.0"?>
+<robot name="lib_robot" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <xacro:include filename="$(find project_wooyangwoo)/urdf/wheel.urdf.xacro" /> 
+  <xacro:include filename="$(find project_wooyangwoo)/urdf/caster_wheel.urdf.xacro" /> 
+
+<!-- 색깔 정의 -->
+  <material name="Black">
+    <color rgba="0.0 0.0 0.0 1.0"/>
+  </material>
+  <material name="Red">
+    <color rgba="0.8 0.0 0.0 1.0"/>
+  </material>
+  <material name="White">
+    <color rgba="1.0 1.0 1.0 1.0"/>
+  </material>
+  <material name="Grey">
+    <color rgba="0.5 0.5 0.5 1.0"/>
+  </material>
+  <material name="Blue">
+    <color rgba="0.0 0.0 0.8 1.0"/>
+  </material>
+
+  <!-- PROPERTY LIST -->
+  <!--기본 프로퍼티-->
+  <xacro:property name="M_PI" value="3.1415926535897931" />
+  <xacro:property name="M_PI_2" value="1.570796327" />
+  <xacro:property name="DEG_TO_RAD" value="0.017453293" />
+
+ <!-- 베이스링크 프로퍼티 -->
+  <xacro:property name="base_length" value="0.30" />  <!-- 30cm -->
+  <xacro:property name="base_width" value="0.20" />   <!-- 20cm -->
+  <xacro:property name="base_height" value="0.05" />  <!-- 5cm -->
+  <xacro:property name="base_mass" value="5.0" />     <!-- kg -->
+
+  <!-- 바퀴 프로퍼티 -->
+  <xacro:property name="wheel_mass" value="2.5" /> <!-- in kg-->
+  <xacro:property name="base_x_origin_to_wheel_origin" value="0.25" />
+  <xacro:property name="base_y_origin_to_wheel_origin" value="0.3" />
+  <xacro:property name="base_z_origin_to_wheel_origin" value="0.0" />
+
+  <!-- Hokuyo Laser scanner -->
+  <xacro:property name="hokuyo_size" value="0.05" />
+
+  <!-- Macro for calculating inertia of cylinder -->
+  <xacro:macro name="cylinder_inertia" params="m r h">
+    <inertia  ixx="${m*(3*r*r+h*h)/12}" ixy = "0" ixz = "0"
+              iyy="${m*(3*r*r+h*h)/12}" iyz = "0"
+              izz="${m*r*r/2}" /> 
+  </xacro:macro>
+
+  <!-- BASE-FOOTPRINT -->
+  <link name="base_footprint">
+    <inertial>
+      <mass value="0.0001" />
+      <origin xyz="0 0 0" />
+      <inertia ixx="0.0001" ixy="0.0" ixz="0.0"
+          iyy="0.0001" iyz="0.0" 
+          izz="0.0001" />
+    </inertial>
+    <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+            <box size="0.001 0.001 0.001" />
+        </geometry>
+    </visual>
+  </link>
+
+  <gazebo reference="base_footprint">
+    <turnGravityOff>false</turnGravityOff>
+  </gazebo>
+
+  <joint name="base_footprint_joint" type="fixed">
+    <origin xyz="0 0 ${wheel_radius - base_z_origin_to_wheel_origin}" rpy="0 0 0" />
+    <parent link="base_footprint"/>
+    <child link="base_link" />
+  </joint>
+
+  <!--베이스 링크-->
+  <link name="base_link">
+    <inertial>
+      <mass value="${base_mass}" />
+      <origin xyz="0 0 0" />
+      <inertia ixx="${base_mass*(base_width*base_width + base_height*base_height) / 12}" 
+              ixy="0.0" 
+              ixz="0.0"
+              iyy="${base_mass*(base_length*base_length + base_height*base_height) / 12}" 
+              iyz="0.0" 
+              izz="${base_mass*(base_length*base_length + base_width*base_width) / 12}" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <box size="${base_length} ${base_width} ${base_height}" />
+      </geometry>
+      <material name="White" />
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <box size="${base_length} ${base_width} ${base_height}" />
+      </geometry>
+    </collision>
+  </link>
+
+  <gazebo reference="base_link">
+    <material>Gazebo/White</material>
+    <turnGravityOff>false</turnGravityOff>
+  </gazebo>
+
+  <!-- Lidar 센서 링크 정의 -->
+  <link name="lidar_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.03" length="0.1"/> <!-- 반지름 3cm, 높이 10cm -->
+      </geometry>
+      <material name="Grey"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.03" length="0.1"/> <!-- 반지름 3cm, 높이 10cm -->
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.5"/> <!-- 질량 설정 (kg) -->
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.0005" ixy="0" ixz="0"
+               iyy="0.0005" iyz="0"
+               izz="0.0005"/>
+    </inertial>
+  </link>
+
+  <!-- Lidar 센서를 베이스링크 위에 부착하는 고정 조인트 -->
+  <joint name="lidar_joint" type="fixed">
+    <parent link="base_link"/> <!-- 베이스링크에 연결 -->
+    <child link="lidar_link"/> <!-- lidar_link를 자식으로 -->
+    <origin xyz="0 0 0.05" rpy="0 0 0"/> <!-- 베이스링크 위로 5cm 올려서 부착 -->
+  </joint>
+  
+
+  <!-- 바퀴 (매크로 사용) -->
+  <xacro:wheel fb="front" lr="right" parent="base_link" translateX="0.01" translateY="-0.1" flipY="1"/>
+  <xacro:wheel fb="front" lr="left" parent="base_link" translateX="0.01" translateY="0.1" flipY="1"/>
+  <xacro:caster_wheel parent="base_link" translateX="-0.125" translateY="0" flipY="1"/>
+
+
+  <!-- 차동 드라이브 플러그인 -->
+  <gazebo>
+    <plugin name="lib_robot_controller" filename="libgazebo_ros_diff_drive.so">
+      <commandTopic>cmd_vel</commandTopic>
+      <odometryTopic>odom</odometryTopic>
+      <odometryFrame>odom</odometryFrame>
+      <odometrySource>world</odometrySource>
+      <publishOdomTF>true</publishOdomTF>
+      <robotBaseFrame>base_footprint</robotBaseFrame>
+      <publishWheelTF>false</publishWheelTF>
+      <publishTf>true</publishTf>
+      <publishWheelJointState>true</publishWheelJointState>
+      <leftJoint>front_left_wheel_joint</leftJoint>  <!-- 왼쪽 바퀴 조인트 -->
+      <rightJoint>front_right_wheel_joint</rightJoint>  <!-- 오른쪽 바퀴 조인트 -->
+      <wheelSeparation>0.30</wheelSeparation>
+      <wheelDiameter>${2 * wheel_radius}</wheelDiameter>
+      <wheelTorque>30</wheelTorque>
+      <wheelAcceleration>1.8</wheelAcceleration>
+    </plugin>
+  </gazebo>
+
+  <!-- IMU 플러그인 -->
+  <gazebo>
+    <plugin name="imu_plugin" filename="libgazebo_ros_imu.so">
+      <alwaysOn>true</alwaysOn>
+      <bodyName>base_link</bodyName>  <!-- IMU가 장착된 링크 이름 -->
+      <frameName>imu_link</frameName> <!-- IMU의 프레임 이름 -->
+      <topicName>imu</topicName>      <!-- 퍼블리시될 토픽 이름 -->
+      <serviceName>imu_service</serviceName>
+      <gaussianNoise>0.0</gaussianNoise>
+    </plugin>
+  </gazebo>
+
+  <!-- Lidar 플러그인 -->
+  <gazebo reference="lidar_link">
+    <sensor type="ray" name="lds_lfcd_sensor">
+      <pose>0 0 0 0 0 0</pose>
+      <visualize>true</visualize>
+      <update_rate>25</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>720</samples>
+            <resolution>1</resolution>
+            <min_angle>0.0</min_angle>
+            <max_angle>6.28319</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.120</min>
+          <max>3.5</max>
+          <resolution>0.015</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.004</stddev>
+        </noise>
+      </ray>
+      <plugin name="gazebo_ros_lds_lfcd_controller" filename="libgazebo_ros_laser.so">
+        <topicName>scan</topicName>
+        <frameName>lidar_link</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+</robot>

@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import rospy
+import subprocess
+import sys
+import os
+from PySide2.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QScrollArea
+from PySide2.QtGui import QImage, QPixmap
+from PySide2.QtCore import Qt, QSize, QTimer
+from explore_lite_gui import Ui_MainWindow  # Qt Designer로 만든 UI 파일을 import
+
+class ExploreLiteController(QMainWindow):
+    def __init__(self):
+        super(ExploreLiteController, self).__init__()
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
+        
+        # 모니터 크기를 동적으로 가져와서 최대 크기 설정
+        screen = QApplication.desktop().screenGeometry()
+        max_width, max_height = screen.width(), screen.height()
+        self.setMaximumSize(QSize(max_width, max_height))  # 최대 크기 제한
+        
+        # 지도 시각화를 위한 스크롤 영역 추가
+        self.scroll_area = QScrollArea(self.ui.centralwidget)
+        self.scroll_area.setGeometry(10, 10, 500, 500)  # 스크롤 영역 크기 설정
+        self.scroll_area.setWidgetResizable(True)
+
+        # 지도 라벨 추가
+        self.map_label = QLabel(self.scroll_area)
+        self.map_label.setAlignment(Qt.AlignCenter)
+        self.map_label.setText("매핑중입니다")  # 초기 텍스트
+        
+        # 스크롤 영역에 지도 라벨을 추가
+        self.scroll_area.setWidget(self.map_label)
+        
+        # ROS 노드 초기화
+        rospy.init_node('explore_lite_gui_controller', anonymous=True)
+        self.explore_process = None
+
+        # 탐색이 완료되었는지 확인하는 플래그
+        self.exploration_finished = False
+
+        # ROS 스핀을 QTimer로 처리 (100ms마다 한 번씩 이벤트 처리)
+        self.ros_timer = QTimer(self)
+        self.ros_timer.timeout.connect(self.ros_spin_once)
+        self.ros_timer.start(100)  # 100ms마다 ROS 이벤트 처리
+
+        # 버튼 클릭 시 호출될 함수 연결
+        self.ui.startButton.clicked.connect(self.start_explore_lite)
+        self.ui.stopButton.clicked.connect(self.stop_explore_lite)
+
+    def ros_spin_once(self):
+        # rospy에서 spin_once 대신 sleep을 사용하여 주기적으로 이벤트 처리
+        rospy.sleep(0.1)  # 0.1초간 슬립하며 ROS 이벤트 처리
+
+    def start_explore_lite(self):
+        rospy.loginfo("Explore Lite 시작")
+        if self.explore_process is None:
+            self.explore_process = subprocess.Popen(["roslaunch", "explore_lite", "explore.launch"])
+            self.exploration_finished = False
+        else:
+            rospy.loginfo("Explore Lite가 이미 실행 중입니다.")
+
+    def stop_explore_lite(self):
+        rospy.loginfo("Explore Lite 종료")
+        if self.explore_process:
+            self.explore_process.terminate()
+            self.explore_process = None
+            rospy.loginfo("탐색이 끝났습니다.")
+            self.exploration_finished = True
+            self.save_and_load_map()
+        else:
+            rospy.loginfo("Explore Lite가 실행 중이 아닙니다.")
+
+    def save_and_load_map(self):
+        # 맵을 저장하고 다시 로드
+        if self.exploration_finished:
+            rospy.loginfo("맵 저장 중...")
+            
+            # 맵 파일 경로
+            map_file_path = os.path.expanduser("~/map")
+            
+            # 맵 저장 (파일 경로 명시적으로 지정)
+            subprocess.call(["rosrun", "map_server", "map_saver", "-f", map_file_path])
+            
+            # 맵 로드
+            rospy.loginfo("맵 로드 중...")
+            subprocess.call(["rosrun", "map_server", "map_server", map_file_path + ".yaml"])
+            
+            # 맵 로드 후 GUI에 표시
+            self.load_map_image()
+
+    def load_map_image(self):
+        # 저장된 맵 이미지를 GUI에 표시
+        map_image_path = os.path.expanduser("~/map.pgm")
+        if os.path.exists(map_image_path):
+            # Qt의 타이머를 사용하여 GUI 업데이트 처리
+            QTimer.singleShot(0, lambda: self.update_map_image(map_image_path))
+        else:
+            rospy.logwarn("맵 이미지 파일을 찾을 수 없습니다.")
+
+    def update_map_image(self, map_image_path):
+        pixmap = QPixmap(map_image_path)
+        self.map_label.setPixmap(pixmap)
+        self.map_label.resize(pixmap.width(), pixmap.height())
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    
+    # 메인 윈도우 생성 및 실행
+    window = ExploreLiteController()
+    window.show()
+    
+    sys.exit(app.exec_())

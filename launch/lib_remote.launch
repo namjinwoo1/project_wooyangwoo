@@ -1,0 +1,14 @@
+<launch>
+  <!-- 자신의 로봇 모델 파일을 설정 -->
+  <arg name="model" default="$(find project_wooyangwoo)/urdf/lib_robot.urdf.xacro" doc="model type [lib_robot]"/>
+  <arg name="multi_robot_name" default=""/>
+
+  <!-- 자신의 로봇 모델 로드 -->
+  <param name="robot_description" command="$(find xacro)/urdf/lib_robot.urdf.xacro" />
+
+  <!-- 로봇 상태 퍼블리셔 -->
+  <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+    <param name="publish_frequency" type="double" value="50.0" />
+    <param name="tf_prefix" value="$(arg multi_robot_name)"/>
+  </node>
+</launch>

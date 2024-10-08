@@ -1,0 +1,13 @@
+local_costmap:
+  global_frame: odom                # 전역 좌표계 (오돔 기준)
+  robot_base_frame: base_footprint  # 로봇의 기준 프레임 (바닥 기준)
+
+  update_frequency: 10.0            # 비용 맵 업데이트 주파수 (Hz)
+  publish_frequency: 10.0           # 비용 맵 게시 주파수 (Hz)
+  transform_tolerance: 0.5          # 변환 허용 오차 (초)
+
+  static_map: false                  # 정적 맵 사용 여부 (true: 정적 맵, false: 동적 맵)
+  rolling_window: true               # 롤링 윈도우 사용 여부 (true: 사용, false: 고정)
+  width: 3                           # 비용 맵의 너비 (미터)
+  height: 3                          # 비용 맵의 높이 (미터)
+  resolution: 0.1                  # 비용 맵 해상도 (미터/픽셀)

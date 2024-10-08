@@ -1,0 +1,17 @@
+<launch>
+    <!-- Gazebo empty world 실행 -->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="paused" value="false"/>
+        <arg name="use_sim_time" value="true"/>
+        <arg name="gui" value="true"/>
+        <arg name="headless" value="false"/>
+        <arg name="debug" value="false"/>
+    </include>
+
+    <!-- URDF 모델 로드 -->
+    <param name="robot_description" command="$(find xacro)/xacro '$(find project_wooyangwoo)/urdf/lib_robot.urdf.xacro'" />
+
+    <!-- URDF 모델을 로드하여 Gazebo에 스폰 -->
+    <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" output="screen"
+          args="-param robot_description -urdf -model simple_robot"/>
+</launch>

@@ -1,0 +1,35 @@
+amcl:
+  min_particles: 500            # 파티클 필터에서 사용하는 최소 파티클 수
+  max_particles: 2000           # 파티클 필터에서 사용하는 최대 파티클 수
+  kld_err: 0.05                 # 파티클 필터의 오류 허용 범위
+  kld_z: 0.99                   # 파티클 필터에서 샘플을 선택할 때의 신뢰 구간
+
+  update_min_d: 0.2             # 파티클 업데이트를 위한 최소 이동 거리 (단위: 미터)
+  update_min_a: 0.2             # 파티클 업데이트를 위한 최소 회전 각도 (단위: 라디안)
+
+  resample_interval: 2          # 파티클 필터 재샘플링 간격
+
+  transform_tolerance: 0.5      # tf 변환의 허용 오차
+
+  recovery_alpha_slow: 0.001    # 느린 업데이트 비율
+  recovery_alpha_fast: 0.1      # 빠른 업데이트 비율
+
+  # 레이저 센서와 관련된 설정
+  laser_lambda_short: 0.1       # 짧은 거리의 레이저 스캔에서의 확률 모델 파라미터
+  laser_model_type: "likelihood_field"   # 레이저 스캔의 확률 모델 (가능성 필드 모델 사용)
+  laser_sigma_hit: 0.2          # 레이저 스캔의 노이즈에 대한 표준 편차
+  laser_likelihood_max_dist: 2.0  # 레이저 스캔의 최대 감지 거리
+
+  # Odometry 관련 설정
+  odom_model_type: "diff"       # 이동 방식 (차동 주행)
+  odom_alpha1: 0.1              # odometry의 회전 오류
+  odom_alpha2: 0.1              # odometry의 직선 이동 오류
+  odom_alpha3: 0.1              # odometry의 회전과 직선 이동 간 오류 상관관계
+  odom_alpha4: 0.1              # odometry의 직선 이동과 회전 간 오류 상관관계
+
+  # 지도의 해상도와 관련된 파라미터
+  global_frame_id: "map"        # 전역 좌표계의 프레임 ID
+  base_frame_id: "base_footprint"  # 로봇의 기본 프레임 ID
+  scan_topic: "scan"            # 레이저 스캔 데이터의 토픽 이름
+  tf_broadcast: true            # TF 브로드캐스트 여부
+  save_pose_rate: 0.5           # 위치를 주기적으로 저장하는 주기 (단위: 초)
